@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>购物追踪器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Courier New',monospace;background:#0a0a0a;color:#e8e0d0;padding:20px}
+.container{max-width:520px;margin:0 auto}
+.header{text-align:center;margin-bottom:30px}
+.title{font-size:32px;font-weight:900;color:#fff;cursor:pointer;padding:4px;border-radius:6px}
+.subtitle{font-size:12px;color:#4a9e6b;margin-top:6px;cursor:pointer}
+.tabs{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;flex-wrap:wrap}
+.tab-group{display:flex;background:#1a1208;border:1px solid #2a2010;border-radius:8px;overflow:hidden}
+.tab-group.active{border-color:#4a9e6b}
+.tab-name{padding:10px 14px;background:none;border:none;color:#6b6050;font-size:13px;cursor:pointer;font-family:inherit}
+.tab-group.active .tab-name{color:#4a9e6b;font-weight:700}
+.tab-del{padding:8px 12px;background:none;border:none;color:#e87070;font-size:20px;line-height:1;cursor:pointer;border-left:1px solid #2a2010}
+.tab-del:active{background:rgba(232,112,112,0.15)}
+.tab-add{padding:10px 16px;background:#1a1208;border:1px dashed #2a2010;border-radius:8px;color:#4a9e6b;font-size:13px;cursor:pointer;font-family:inherit}
+.countdown{background:linear-gradient(135deg,#1a1208,#120e06);border:1px solid #2a2010;border-radius:12px;padding:20px;margin-bottom:20px;display:flex;justify-content:space-between}
+.countdown-label{font-size:10px;color:#6b6050;margin-bottom:4px}
+.countdown-value{font-size:15px;color:#e8c870;cursor:pointer;padding:2px 6px;border-radius:4px}
+.countdown-days{font-size:28px;font-weight:900;color:#fff}
+.phase-btns{display:flex;gap:8px;margin-bottom:20px}
+.phase-btn{flex:1;padding:10px;border-radius:8px;border:1px solid #2a2010;background:transparent;color:#6b6050;font-size:13px;cursor:pointer;font-family:inherit}
+.phase-btn.active{border-color:#4a9e6b;background:rgba(74,158,107,0.15);color:#4a9e6b}
+.card{background:#111009;border:1px solid #2a2010;border-radius:12px;padding:20px;margin-bottom:20px}
+.card-header{font-size:10px;color:#6b6050;letter-spacing:3px;margin-bottom:14px}
+.progress-row{display:flex;justify-content:space-between;margin-bottom:16px}
+.progress-label{font-size:10px;color:#6b6050;margin-bottom:4px}
+.progress-value{font-size:28px;font-weight:900;color:#fff}
+.progress-percent{font-size:14px;color:#6b6050;margin-left:8px}
+.progress-bar-bg{background:#1a1208;border-radius:4px;height:8px;margin-bottom:8px}
+.progress-bar{height:100%;border-radius:4px;transition:width 0.6s}
+.progress-bar.saving{background:linear-gradient(90deg,#2d6e45,#4a9e6b);box-shadow:0 0 12px rgba(74,158,107,0.5)}
+.progress-bar.repay{background:linear-gradient(90deg,#8a6e20,#e8c870)}
+.progress-info{display:flex;justify-content:space-between;font-size:11px;color:#6b6050;margin-bottom:20px}
+.milestone{display:flex;align-items:center;gap:10px;margin-bottom:6px;padding:6px 8px;border-radius:6px;cursor:pointer}
+.milestone:active{background:rgba(255,255,255,0.02)}
+.milestone-icon{font-size:14px}
+.milestone-label{font-size:12px;flex:1}
+.milestone-amount{font-size:11px;color:#6b6050}
+.input-group{display:flex;gap:8px;margin-bottom:8px}
+.input-field{flex:1;background:#1a1208;border:1px solid #2a2010;border-radius:8px;padding:10px;color:#e8e0d0;font-size:14px;outline:none;font-family:inherit}
+.btn{border:none;border-radius:8px;padding:10px 18px;color:#fff;font-size:13px;cursor:pointer;font-weight:700;font-family:inherit}
+.btn-primary{background:#4a9e6b}
+.btn-repay{background:#c8a840;color:#000}
+.quick-btns{display:flex;gap:6px}
+.quick-btn{flex:1;background:transparent;border:1px solid #2a2010;border-radius:6px;padding:6px;color:#6b6050;font-size:11px;cursor:pointer;font-family:inherit}
+.snapshot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.snapshot-card{padding:10px 12px;background:#1a1208;border-radius:8px;cursor:pointer}
+.snapshot-card:active{background:rgba(255,255,255,0.02)}
+.snapshot-label{font-size:10px;color:#6b6050;margin-bottom:6px}
+.snapshot-value{font-size:16px;font-weight:700;color:#e8e0d0}
+.plan-grid{background:#1a1208;border-radius:8px;padding:14px 16px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.plan-item{cursor:pointer;padding:4px;border-radius:4px}
+.plan-item:active{background:rgba(255,255,255,0.03)}
+.plan-label{font-size:10px;color:#6b6050;margin-bottom:3px}
+.plan-value{font-size:14px;color:#e8e0d0}
+.log-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1a1208;border-radius:6px;border-left:2px solid #4a9e6b;margin-bottom:8px}
+.log-info{flex:1}
+.log-type{font-size:11px;color:#4a9e6b}
+.log-type.repay{color:#e8c870}
+.log-date{font-size:11px;color:#6b6050;margin-left:8px}
+.log-amount{font-size:14px;color:#e8e0d0;font-weight:700;margin-right:12px}
+.log-undo{background:transparent;border:1px solid #2a2010;border-radius:5px;padding:3px 8px;color:#6b6050;font-size:11px;cursor:pointer;font-family:inherit}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;z-index:1000}
+.modal.show{display:flex}
+.modal-content{background:#111009;border:1px solid #2a2010;border-radius:12px;padding:24px;max-width:400px;width:90%}
+.modal-title{font-size:14px;color:#e8e0d0;margin-bottom:16px;font-weight:700}
+.modal-label{font-size:11px;color:#6b6050;margin:12px 0 6px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#4a9e6b;color:#fff;padding:8px 20px;border-radius:20px;font-size:12px;opacity:0;transition:opacity 0.3s;z-index:2000}
+.toast.show{opacity:1}
+.edit-icon{font-size:9px;color:#3a3028;margin-left:4px}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+<div class="title" id="title" onclick="editTitle()">BMW M240i</div>
+<div class="subtitle" id="subtitle" onclick="editSubtitle()">3.0T · L6 · RWD <span class="edit-icon">✎</span></div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="countdown">
+<div>
+<div class="countdown-label">DELIVERY TARGET</div>
+<div class="countdown-value" onclick="editDate()"><span id="dateText">2026年6月15日</span> <span class="edit-icon">✎</span></div>
+</div>
+<div style="text-align:right">
+<div class="countdown-label">COUNTDOWN</div>
+<div class="countdown-days"><span id="days">117</span><span style="font-size:13px;color:#6b6050;margin-left:4px">天</span></div>
+</div>
+</div>
+
+<div class="phase-btns">
+<button class="phase-btn active" id="savingBtn" onclick="switchPhase('saving')">💰 攒钱阶段</button>
+<button class="phase-btn" id="repayingBtn" onclick="switchPhase('repaying')">🔄 还款阶段</button>
+</div>
+
+<div class="card" id="savingPhase">
+<div class="progress-row">
+<div>
+<div class="progress-label">CURRENT SAVINGS</div>
+<div class="progress-value">¥<span id="savings">130000</span><span class="progress-percent" id="percent">50%</span></div>
+</div>
+<div style="text-align:right">
+<div class="progress-label">TARGET</div>
+<div class="progress-value" style="color:#4a9e6b">¥<span id="target">260000</span></div>
+</div>
+</div>
+<div class="progress-bar-bg"><div class="progress-bar saving" id="savingBar"></div></div>
+<div class="progress-info">
+<span><span id="pct">50.0</span>% 达成</span>
+<span>还差 ¥<span id="remain">130000</span></span>
+</div>
+
+<div style="margin-bottom:20px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div class="card-header" style="margin:0">MILESTONES</div>
+<div style="font-size:9px;color:#3a3028">点击编辑</div>
+</div>
+<div id="milestones"></div>
+</div>
+
+<div class="input-group">
+<input type="number" class="input-field" id="saveInput" placeholder="记录存款金额">
+<button class="btn btn-primary" onclick="addSavings()">存入</button>
+</div>
+<div class="quick-btns">
+<button class="quick-btn" onclick="quick(7500)">+0.75万</button>
+<button class="quick-btn" onclick="quick(10000)">+1万</button>
+<button class="quick-btn" onclick="quick(20000)">+2万</button>
+</div>
+</div>
+
+<div class="card" id="repayingPhase" style="display:none">
+<div class="progress-row">
+<div>
+<div class="progress-label">已还父母</div>
+<div class="progress-value">¥<span id="repaid">0</span></div>
+</div>
+<div style="text-align:right">
+<div class="progress-label">总借款</div>
+<div class="progress-value" style="color:#e8c870">¥<span id="borrow">140000</span></div>
+</div>
+</div>
+<div class="progress-bar-bg"><div class="progress-bar repay" id="repayBar"></div></div>
+<div class="progress-info">
+<span><span id="repayPct">0.0</span>% 还清</span>
+<span>剩余 ¥<span id="repayRemain">140000</span></span>
+</div>
+
+<div class="plan-grid">
+<div class="plan-item" onclick="editParam('monthlyRepay')">
+<div class="plan-label">月还金额</div>
+<div class="plan-value">¥<span id="monthlyRepay">4200</span> <span class="edit-icon">✎</span></div>
+</div>
+<div class="plan-item" onclick="editParam('annualBonus')">
+<div class="plan-label">年终奖</div>
+<div class="plan-value">¥<span id="annualBonus">20000</span>/年 <span class="edit-icon">✎</span></div>
+</div>
+<div class="plan-item" onclick="editParam('targetYears')">
+<div class="plan-label">目标周期</div>
+<div class="plan-value"><span id="targetYears">2</span>年还清 <span class="edit-icon">✎</span></div>
+</div>
+<div class="plan-item" onclick="editParam('targetDate')">
+<div class="plan-label">预计完成</div>
+<div class="plan-value"><span id="targetDateText">2028年6月</span> <span class="edit-icon">✎</span></div>
+</div>
+</div>
+
+<div class="input-group">
+<input type="number" class="input-field" id="repayInput" placeholder="记录还款金额">
+<button class="btn btn-repay" onclick="addRepay()">还款</button>
+</div>
+<div class="quick-btns" id="repayQuick">
+<button class="quick-btn" onclick="quickRepay(4200)">¥4200</button>
+<button class="quick-btn" onclick="quickRepay(20000)">¥2万</button>
+<button class="quick-btn" onclick="quickRepay(50000)">¥5万</button>
+</div>
+</div>
+
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+<div class="card-header" style="margin:0">FINANCIAL SNAPSHOT</div>
+<div style="font-size:9px;color:#3a3028">点击数字可编辑</div>
+</div>
+<div class="snapshot-grid">
+<div class="snapshot-card" onclick="editParam('carPrice')">
+<div class="snapshot-label">落地价</div>
+<div class="snapshot-value">¥<span id="carPrice">400000</span> <span class="edit-icon">✎</span></div>
+</div>
+<div class="snapshot-card" onclick="editParam('parentSupport')">
+<div class="snapshot-label">父母支持</div>
+<div class="snapshot-value" style="color:#4a9e6b">¥<span id="parentSupport">100000</span> <span class="edit-icon">✎</span></div>
+</div>
+<div class="snapshot-card" onclick="editParam('borrowAmount')">
+<div class="snapshot-label">借款金额</div>
+<div class="snapshot-value" style="color:#e8c870">¥<span id="borrowAmount">140000</span> <span class="edit-icon">✎</span></div>
+</div>
+<div class="snapshot-card" onclick="editParam('monthlyIncome')">
+<div class="snapshot-label">月收入</div>
+<div class="snapshot-value" style="color:#4a9e6b">¥<span id="monthlyIncome">10000</span> <span class="edit-icon">✎</span></div>
+</div>
+<div class="snapshot-card" onclick="editParam('monthlyRepay')">
+<div class="snapshot-label">月还款</div>
+<div class="snapshot-value" style="color:#e87070">¥<span id="monthlyRepaySnap">4200</span> <span class="edit-icon">✎</span></div>
+</div>
+<div class="snapshot-card">
+<div class="snapshot-label">每月结余 <span style="font-size:9px;color:#3a3028">(自动)</span></div>
+<div class="snapshot-value" id="balanceValue">¥4000</div>
+</div>
+</div>
+</div>
+
+<div class="card" id="logCard" style="display:none">
+<div class="card-header">ACTIVITY LOG</div>
+<div id="logs"></div>
+<div style="font-size:10px;color:#3a3028;margin-top:10px;text-align:center">点击「撤销」可取消记录</div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="modal">
+<div class="modal-content">
+<div class="modal-title" id="modalTitle">编辑</div>
+<input type="text" class="input-field" id="modalInput" style="width:100%;margin-bottom:16px">
+<div style="display:flex;gap:8px">
+<button class="btn btn-primary" onclick="confirmModal()" style="flex:1">确认</button>
+<button class="btn" onclick="closeModal()" style="flex:1;background:#2a2010">取消</button>
+</div>
+</div>
+</div>
+
+<div class="modal" id="newModal">
+<div class="modal-content">
+<div class="modal-title" id="newModalTitle">创建你的第一个目标</div>
+<div style="font-size:12px;color:#6b6050;margin-bottom:16px">开始追踪你的购物计划</div>
+<div class="modal-label">目标名称</div>
+<input type="text" class="input-field" id="newName" placeholder="如：MacBook Pro、BMW M240i" style="width:100%">
+<div class="modal-label">副标题（可选）</div>
+<input type="text" class="input-field" id="newSub" placeholder="如：M4 Max · 64GB" style="width:100%">
+<div class="modal-label">目标价格</div>
+<input type="number" class="input-field" id="newPrice" placeholder="如：40000" style="width:100%">
+<div style="display:flex;gap:8px;margin-top:16px">
+<button class="btn btn-primary" onclick="createTarget()" style="flex:1">创建目标</button>
+<button class="btn" onclick="closeNewModal()" style="flex:1;background:#2a2010" id="cancelNewBtn">取消</button>
+</div>
+</div>
+</div>
+
+<script>
+const KEY='tracker_complete_v1';
+const DEFAULT={
+id:1,name:'BMW M240i',sub:'3.0T · L6 · RWD',
+savings:130000,repaid:0,phase:'saving',logs:[],
+targetDate:'2026-06-15',
+params:{
+carPrice:400000,parentSupport:100000,borrowAmount:140000,
+monthlyIncome:10000,monthlyRepay:4200,annualBonus:20000,
+targetYears:2,targetDate:'2028年6月'
+},
+milestones:[
+{label:'开始冲刺',amount:130000,icon:'🏁'},
+{label:'存款15万',amount:150000,icon:'💰'},
+{label:'存款18万',amount:180000,icon:'📈'},
+{label:'存款20万',amount:200000,icon:'🎯'},
+{label:'存款23万',amount:230000,icon:'🔥'},
+{label:'存款26万 提车！',amount:260000,icon:'🚗'}
+]
+};
+
+let data={targets:[],current:null};
+let callback=null;
+
+function load(){
+try{
+const s=localStorage.getItem(KEY);
+if(s){
+data=JSON.parse(s);
+if(!data.targets)data.targets=[];
+}
+}catch(e){
+data={targets:[],current:null};
+}
+// 如果没有目标，显示欢迎界面
+if(!data.targets||data.targets.length===0){
+setTimeout(()=>{
+document.getElementById('newModal').classList.add('show');
+document.getElementById('newName').focus();
+},300);
+}
+}
+
+function save(){
+try{
+localStorage.setItem(KEY,JSON.stringify(data));
+toast('已保存 ✓');
+}catch(e){
+toast('保存失败');
+}
+}
+
+function get(){
+let t=data.targets.find(x=>x.id===data.current);
+if(!t)t=data.targets[0];
+if(!t.params)t.params={};
+t.params.carPrice=t.params.carPrice||400000;
+t.params.parentSupport=t.params.parentSupport||0;
+t.params.borrowAmount=t.params.borrowAmount||0;
+t.params.monthlyIncome=t.params.monthlyIncome||10000;
+t.params.monthlyRepay=t.params.monthlyRepay||0;
+t.params.annualBonus=t.params.annualBonus||20000;
+t.params.targetYears=t.params.targetYears||2;
+t.params.targetDate=t.params.targetDate||'未设置';
+t.targetDate=t.targetDate||'2026-06-15';
+t.milestones=t.milestones||DEFAULT.milestones;
+t.savings=t.savings||0;
+t.repaid=t.repaid||0;
+t.logs=t.logs||[];
+t.phase=t.phase||'saving';
+return t;
+}
+
+function render(){
+// 如果没有目标，显示空状态
+if(!data.targets||data.targets.length===0){
+document.getElementById('title').textContent='购物追踪器';
+document.getElementById('subtitle').innerHTML='创建你的第一个目标 <span class="edit-icon">✎</span>';
+document.getElementById('tabs').innerHTML='<button class="tab-add" onclick="openNew()">+ 新目标</button>';
+document.getElementById('savingPhase').style.display='none';
+document.getElementById('repayingPhase').style.display='none';
+document.getElementById('logCard').style.display='none';
+document.getElementById('days').textContent='0';
+document.getElementById('dateText').textContent='--';
+return;
+}
+const t=get();
+document.getElementById('title').textContent=t.name||'新目标';
+document.getElementById('subtitle').innerHTML=(t.sub||'点击添加副标题')+' <span class="edit-icon">✎</span>';
+updateCountdown();
+renderTabs();
+renderMilestones();
+renderSnapshot();
+updateProgress();
+switchPhase(t.phase);
+renderLogs();
+}
+
+function renderTabs(){
+const t=get();
+let html='';
+data.targets.forEach(x=>{
+const active=x.id===t.id?'active':'';
+const canDel=data.targets.length>1;
+html+='<div class="tab-group '+active+'">';
+html+='<button class="tab-name" onclick="switchTo('+x.id+')" ondblclick="renameTab('+x.id+')">'+x.name+'</button>';
+if(canDel){
+html+='<button class="tab-del" onclick="deleteTab('+x.id+')">×</button>';
+}
+html+='</div>';
+});
+html+='<button class="tab-add" onclick="openNew()">+ 新目标</button>';
+document.getElementById('tabs').innerHTML=html;
+}
+
+function switchTo(id){
+data.current=id;
+save();
+render();
+}
+
+function renameTab(id){
+const target=data.targets.find(x=>x.id===id);
+if(!target)return;
+const newName=prompt('修改目标名称:',target.name);
+if(newName&&newName.trim()){
+target.name=newName.trim();
+save();
+renderTabs();
+if(id===data.current)document.getElementById('title').textContent=target.name;
+}
+}
+
+function deleteTab(id){
+if(data.targets.length<=1){
+alert('至少要保留一个目标！');
+return;
+}
+const target=data.targets.find(x=>x.id===id);
+if(!target)return;
+if(!confirm('确认删除目标「'+target.name+'」？\n所有数据将被清除且无法恢复！')){
+return;
+}
+data.targets=data.targets.filter(x=>x.id!==id);
+if(data.current===id){
+data.current=data.targets[0].id;
+}
+save();
+render();
+}
+
+
+function updateCountdown(){
+const t=get();
+const target=new Date(t.targetDate);
+const now=new Date();
+const days=Math.max(0,Math.ceil((target-now)/(1000*60*60*24)));
+document.getElementById('days').textContent=days;
+const d=new Date(t.targetDate);
+document.getElementById('dateText').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+
+function renderMilestones(){
+const t=get();
+const html=t.milestones.map((m,i)=>{
+const done=t.savings>=m.amount;
+const last=t.milestones.slice().reverse().find(x=>t.savings>=x.amount);
+const cur=last&&last.amount===m.amount;
+return '<div class="milestone" style="opacity:'+(done?1:0.4)+'" onclick="editMilestone('+i+')">'+
+'<span class="milestone-icon">'+(done?m.icon:'○')+'</span>'+
+'<span class="milestone-label" style="color:'+(done?(cur?'#e8c870':'#4a9e6b'):'#6b6050')+'">'+m.label+'</span>'+
+'<span class="milestone-amount">¥'+m.amount.toLocaleString()+'</span>'+
+'</div>';
+}).join('');
+document.getElementById('milestones').innerHTML=html;
+}
+
+function editMilestone(i){
+const t=get();
+const m=t.milestones[i];
+const name=prompt('里程碑名称:',m.label);
+if(name===null)return;
+const amt=prompt('里程碑金额:',m.amount);
+if(amt===null||Number(amt)<0)return;
+const icon=prompt('图标 emoji:',m.icon);
+if(icon===null)return;
+t.milestones[i]={label:name,amount:Number(amt),icon:icon};
+save();
+renderMilestones();
+}
+
+function renderSnapshot(){
+const t=get();
+const bal=t.params.monthlyIncome-t.params.monthlyRepay-1800;
+document.getElementById('carPrice').textContent=t.params.carPrice.toLocaleString();
+document.getElementById('parentSupport').textContent=t.params.parentSupport.toLocaleString();
+document.getElementById('borrowAmount').textContent=t.params.borrowAmount.toLocaleString();
+document.getElementById('monthlyIncome').textContent=t.params.monthlyIncome.toLocaleString();
+document.getElementById('monthlyRepay').textContent=t.params.monthlyRepay.toLocaleString();
+document.getElementById('monthlyRepaySnap').textContent=t.params.monthlyRepay.toLocaleString();
+document.getElementById('annualBonus').textContent=t.params.annualBonus.toLocaleString();
+document.getElementById('targetYears').textContent=t.params.targetYears;
+document.getElementById('targetDateText').textContent=t.params.targetDate;
+const balEl=document.getElementById('balanceValue');
+balEl.textContent='¥'+bal.toLocaleString();
+balEl.style.color=bal>=0?'#4a9e6b':'#e87070';
+updateRepayQuick();
+}
+
+function updateProgress(){
+const t=get();
+const tgt=(t.params.carPrice||0)-(t.params.parentSupport||0);
+const pct=tgt>0?Math.min(100,(t.savings/tgt)*100):0;
+document.getElementById('savings').textContent=t.savings.toLocaleString();
+document.getElementById('percent').textContent=pct.toFixed(1)+'%';
+document.getElementById('target').textContent=tgt.toLocaleString();
+document.getElementById('pct').textContent=pct.toFixed(1);
+document.getElementById('remain').textContent=Math.max(0,tgt-t.savings).toLocaleString();
+document.getElementById('savingBar').style.width=pct+'%';
+
+const bor=t.params.borrowAmount||1;
+const rpct=Math.min(100,(t.repaid/bor)*100);
+document.getElementById('repaid').textContent=t.repaid.toLocaleString();
+document.getElementById('borrow').textContent=bor.toLocaleString();
+document.getElementById('repayPct').textContent=rpct.toFixed(1);
+document.getElementById('repayRemain').textContent=Math.max(0,bor-t.repaid).toLocaleString();
+document.getElementById('repayBar').style.width=rpct+'%';
+}
+
+function updateRepayQuick(){
+const t=get();
+const amt=t.params.monthlyRepay;
+document.getElementById('repayQuick').innerHTML=
+'<button class="quick-btn" onclick="quickRepay('+amt+')">¥'+(amt>=10000?(amt/10000)+'万':amt)+'</button>'+
+'<button class="quick-btn" onclick="quickRepay(20000)">¥2万</button>'+
+'<button class="quick-btn" onclick="quickRepay(50000)">¥5万</button>';
+}
+
+function renderLogs(){
+const t=get();
+if(!t.logs||t.logs.length===0){
+document.getElementById('logCard').style.display='none';
+return;
+}
+document.getElementById('logCard').style.display='block';
+const html=t.logs.slice(0,10).map(l=>{
+return '<div class="log-item">'+
+'<div class="log-info">'+
+'<span class="log-type '+(l.type==='repay'?'repay':'')+'">'+( l.type==='save'?'存入':'还款')+'</span>'+
+'<span class="log-date">'+l.date+'</span>'+
+'</div>'+
+'<span class="log-amount">+¥'+l.amount.toLocaleString()+'</span>'+
+'<button class="log-undo" onclick="undoLog('+l.id+')">撤销</button>'+
+'</div>';
+}).join('');
+document.getElementById('logs').innerHTML=html;
+}
+
+function undoLog(id){
+if(!confirm('确认撤销这条记录？'))return;
+const t=get();
+const log=t.logs.find(l=>l.id===id);
+if(!log)return;
+t.logs=t.logs.filter(l=>l.id!==id);
+if(log.type==='save'){
+t.savings=Math.max(0,t.savings-log.amount);
+}else{
+t.repaid=Math.max(0,t.repaid-log.amount);
+}
+save();
+updateProgress();
+renderMilestones();
+renderLogs();
+}
+
+function switchPhase(p){
+const t=get();
+t.phase=p;
+document.getElementById('savingBtn').classList.toggle('active',p==='saving');
+document.getElementById('repayingBtn').classList.toggle('active',p==='repaying');
+document.getElementById('savingPhase').style.display=p==='saving'?'block':'none';
+document.getElementById('repayingPhase').style.display=p==='repaying'?'block':'none';
+save();
+}
+
+function editTitle(){
+const t=get();
+document.getElementById('modalTitle').textContent='编辑目标名称';
+document.getElementById('modalInput').value=t.name||'';
+document.getElementById('modalInput').type='text';
+document.getElementById('modal').classList.add('show');
+callback=v=>{
+t.name=v;
+save();
+render();
+};
+setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+
+function editSubtitle(){
+const t=get();
+document.getElementById('modalTitle').textContent='编辑副标题';
+document.getElementById('modalInput').value=t.sub||'';
+document.getElementById('modalInput').type='text';
+document.getElementById('modal').classList.add('show');
+callback=v=>{
+t.sub=v;
+save();
+render();
+};
+setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+
+function editDate(){
+const t=get();
+document.getElementById('modalTitle').textContent='编辑提车日期';
+document.getElementById('modalInput').value=t.targetDate;
+document.getElementById('modalInput').type='date';
+document.getElementById('modal').classList.add('show');
+callback=v=>{
+t.targetDate=v;
+save();
+updateCountdown();
+};
+setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+
+function editParam(key){
+const t=get();
+const titles={
+carPrice:'落地价',parentSupport:'父母支持',borrowAmount:'借款金额',
+monthlyIncome:'月收入',monthlyRepay:'月还金额',annualBonus:'年终奖',
+targetYears:'目标周期（年）',targetDate:'预计完成（如：2028年6月）'
+};
+document.getElementById('modalTitle').textContent='编辑 '+titles[key];
+document.getElementById('modalInput').value=t.params[key];
+document.getElementById('modalInput').type=key==='targetDate'?'text':'number';
+document.getElementById('modal').classList.add('show');
+callback=v=>{
+t.params[key]=key==='targetDate'?v:Number(v);
+save();
+renderSnapshot();
+updateProgress();
+};
+setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+
+function confirmModal(){
+const v=document.getElementById('modalInput').value;
+if(v&&callback)callback(v);
+closeModal();
+}
+
+function closeModal(){
+document.getElementById('modal').classList.remove('show');
+document.getElementById('modalInput').type='text';
+callback=null;
+}
+
+function addSavings(){
+const inp=document.getElementById('saveInput');
+const amt=Number(inp.value);
+if(!amt||amt<=0)return;
+const t=get();
+t.savings+=amt;
+t.logs.unshift({id:Date.now(),type:'save',amount:amt,date:new Date().toLocaleDateString('zh-CN')});
+t.logs=t.logs.slice(0,30);
+inp.value='';
+const tgt=(t.params.carPrice||0)-(t.params.parentSupport||0);
+if(t.savings>=tgt&&t.phase==='saving')switchPhase('repaying');
+save();
+updateProgress();
+renderMilestones();
+renderLogs();
+}
+
+function quick(amt){
+const t=get();
+t.savings+=amt;
+t.logs.unshift({id:Date.now(),type:'save',amount:amt,date:new Date().toLocaleDateString('zh-CN')});
+t.logs=t.logs.slice(0,30);
+const tgt=(t.params.carPrice||0)-(t.params.parentSupport||0);
+if(t.savings>=tgt&&t.phase==='saving')switchPhase('repaying');
+save();
+updateProgress();
+renderMilestones();
+renderLogs();
+}
+
+function addRepay(){
+const inp=document.getElementById('repayInput');
+const amt=Number(inp.value);
+if(!amt||amt<=0)return;
+const t=get();
+t.repaid+=amt;
+t.logs.unshift({id:Date.now(),type:'repay',amount:amt,date:new Date().toLocaleDateString('zh-CN')});
+t.logs=t.logs.slice(0,30);
+inp.value='';
+save();
+updateProgress();
+renderLogs();
+}
+
+function quickRepay(amt){
+const t=get();
+t.repaid+=amt;
+t.logs.unshift({id:Date.now(),type:'repay',amount:amt,date:new Date().toLocaleDateString('zh-CN')});
+t.logs=t.logs.slice(0,30);
+save();
+updateProgress();
+renderLogs();
+}
+
+function openNew(){
+const isFirst=!data.targets||data.targets.length===0;
+document.getElementById('newModalTitle').textContent=isFirst?'创建你的第一个目标':'新建目标';
+document.getElementById('cancelNewBtn').style.display=isFirst?'none':'block';
+document.getElementById('newModal').classList.add('show');
+document.getElementById('newName').value='';
+document.getElementById('newSub').value='';
+document.getElementById('newPrice').value='';
+setTimeout(()=>document.getElementById('newName').focus(),100);
+}
+
+function closeNewModal(){
+// 如果是首次使用（没有目标），不允许关闭
+if(!data.targets||data.targets.length===0){
+return;
+}
+document.getElementById('newModal').classList.remove('show');
+}
+
+function createTarget(){
+const name=document.getElementById('newName').value;
+const sub=document.getElementById('newSub').value;
+const price=Number(document.getElementById('newPrice').value);
+if(!name||!price||price<=0){
+alert('请填写目标名称和金额');
+return;
+}
+const id=Date.now();
+const future=new Date(Date.now()+180*24*60*60*1000);
+data.targets.push({
+id:id,name:name,sub:sub,savings:0,repaid:0,phase:'saving',logs:[],
+targetDate:future.toISOString().split('T')[0],
+params:{
+carPrice:price,parentSupport:0,borrowAmount:0,
+monthlyIncome:10000,monthlyRepay:0,annualBonus:20000,
+targetYears:2,targetDate:'未设置'
+},
+milestones:[
+{label:'开始冲刺',amount:0,icon:'🏁'},
+{label:'存款'+Math.round(price*0.2/10000)+'万',amount:Math.round(price*0.2),icon:'💰'},
+{label:'存款'+Math.round(price*0.4/10000)+'万',amount:Math.round(price*0.4),icon:'📈'},
+{label:'存款'+Math.round(price*0.6/10000)+'万',amount:Math.round(price*0.6),icon:'🎯'},
+{label:'存款'+Math.round(price*0.8/10000)+'万',amount:Math.round(price*0.8),icon:'🔥'},
+{label:'达成目标！',amount:price,icon:'🎉'}
+]
+});
+data.current=id;
+closeNewModal();
+save();
+render();
+}
+
+function toast(msg){
+const t=document.getElementById('toast');
+t.textContent=msg;
+t.classList.add('show');
+setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
+document.getElementById('newModal').onclick=e=>{if(e.target.id==='newModal')closeNewModal()};
+document.getElementById('saveInput').onkeydown=e=>{if(e.key==='Enter')addSavings()};
+document.getElementById('repayInput').onkeydown=e=>{if(e.key==='Enter')addRepay()};
+
+load();
+render();
+</script>
+</body>
+</html>
+
+<!-- 使用说明：
+首次打开会显示创建目标界面
+分享给朋友时，他们会看到干净的界面，需要自己创建目标
+所有数据保存在浏览器本地，不同设备/浏览器数据独立
+-->
